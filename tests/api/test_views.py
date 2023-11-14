@@ -10,9 +10,7 @@ GET_RECO_PATH = "/reco/{model_name}/{user_id}"
 EXISTING_USER = 1
 EXISTINGS_MODEL = Models.SAMPLE_MODEL
 
-DEFAULT_HEADERS = {
-    'api-key': "default_api_key"
-}
+DEFAULT_HEADERS = {"api-key": "default_api_key"}
 
 
 def test_health(

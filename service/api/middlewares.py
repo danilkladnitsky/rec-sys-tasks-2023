@@ -1,4 +1,5 @@
 import time
+from os import getenv as env
 
 from fastapi import FastAPI, Request
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
@@ -7,11 +8,7 @@ from starlette.responses import Response
 
 from service.log import access_logger, app_logger
 from service.models import Error
-from service.response import server_error, access_error
-
-from http import HTTPStatus
-
-from os import getenv as env
+from service.response import access_error, server_error
 
 API_KEY = env("API_KEY", "default_api_key")
 
@@ -46,7 +43,7 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         request: Request,
         call_next: RequestResponseEndpoint,
     ) -> Response:
-        user_api_key = request.headers.get('api-key')
+        user_api_key = request.headers.get("api-key")
 
         if user_api_key != API_KEY or user_api_key is None:
             error = Error(error_key="server_error", error_message="Invalid Api-Key")
