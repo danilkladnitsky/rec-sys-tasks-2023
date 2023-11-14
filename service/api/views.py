@@ -3,8 +3,10 @@ from typing import List
 from fastapi import APIRouter, FastAPI, Request
 from pydantic import BaseModel
 
-from service.api.exceptions import UserNotFoundError
+from service.api.exceptions import UserNotFoundError, ModelNotFoundError
 from service.log import app_logger
+
+from service.ml.model_manager import get_model_by_name, Models
 
 
 class RecoResponse(BaseModel):
@@ -35,14 +37,15 @@ async def get_reco(
 ) -> RecoResponse:
     app_logger.info(f"Request for model: {model_name}, user_id: {user_id}")
 
-    # Write your code here
-
     if user_id > 10**9:
         raise UserNotFoundError(error_message=f"User {user_id} not found")
 
-    k_recs = request.app.state.k_recs
-    reco = list(range(k_recs))
-    return RecoResponse(user_id=user_id, items=reco)
+    requested_model = get_model_by_name(model_name, user_id)
+
+    if (requested_model == None):
+        raise ModelNotFoundError(error_message=f"Requested  model with name '{model_name}' wasn't registered yet")
+
+    return RecoResponse(user_id=user_id, items=requested_model.get_reco(user_id))
 
 
 def add_views(app: FastAPI) -> None:
