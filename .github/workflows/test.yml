@@ -1,10 +1,11 @@
-name: Test
+name: Lint, test and run application
 on:
   push:
     branches:
       - master
   pull_request:
     types: [opened, synchronize]
+  workflow_dispatch:
 
 
 jobs:
