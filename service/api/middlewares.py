@@ -7,7 +7,13 @@ from starlette.responses import Response
 
 from service.log import access_logger, app_logger
 from service.models import Error
-from service.response import server_error
+from service.response import server_error, access_error
+
+from http import HTTPStatus
+
+from os import getenv as env
+
+API_KEY = env("API_KEY", "default_api_key")
 
 
 class AccessMiddleware(BaseHTTPMiddleware):
@@ -34,6 +40,21 @@ class AccessMiddleware(BaseHTTPMiddleware):
         return response
 
 
+class AuthorizationMiddleware(BaseHTTPMiddleware):
+    async def dispatch(
+        self,
+        request: Request,
+        call_next: RequestResponseEndpoint,
+    ) -> Response:
+        user_api_key = request.headers.get('api-key')
+
+        if user_api_key != API_KEY or user_api_key is None:
+            error = Error(error_key="server_error", error_message="Invalid Api-Key")
+            return access_error([error])
+
+        return await call_next(request)
+
+
 class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self,
@@ -49,7 +70,7 @@ class ExceptionHandlerMiddleware(BaseHTTPMiddleware):
 
 
 def add_middlewares(app: FastAPI) -> None:
-    # do not change order
+    app.add_middleware(AuthorizationMiddleware)
     app.add_middleware(ExceptionHandlerMiddleware)
     app.add_middleware(AccessMiddleware)
     app.add_middleware(
