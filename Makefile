@@ -73,6 +73,8 @@ run: build
 
 # All
 
+before_push: format lint
+
 all: setup format lint test run
 
 .DEFAULT_GOAL = all

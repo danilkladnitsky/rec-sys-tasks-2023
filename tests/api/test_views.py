@@ -2,9 +2,13 @@ from http import HTTPStatus
 
 from starlette.testclient import TestClient
 
+from service.ml.model_manager import Models
 from service.settings import ServiceConfig
 
 GET_RECO_PATH = "/reco/{model_name}/{user_id}"
+
+EXISTING_USER = 1
+EXISTINGS_MODEL = Models.SAMPLE_MODEL
 
 
 def test_health(
@@ -19,8 +23,8 @@ def test_get_reco_success(
     client: TestClient,
     service_config: ServiceConfig,
 ) -> None:
-    user_id = 123
-    path = GET_RECO_PATH.format(model_name="some_model", user_id=user_id)
+    user_id = EXISTING_USER
+    path = GET_RECO_PATH.format(model_name=EXISTINGS_MODEL, user_id=user_id)
     with client:
         response = client.get(path)
     assert response.status_code == HTTPStatus.OK
@@ -34,8 +38,22 @@ def test_get_reco_for_unknown_user(
     client: TestClient,
 ) -> None:
     user_id = 10**10
-    path = GET_RECO_PATH.format(model_name="some_model", user_id=user_id)
+    path = GET_RECO_PATH.format(model_name=EXISTINGS_MODEL, user_id=user_id)
     with client:
         response = client.get(path)
     assert response.status_code == HTTPStatus.NOT_FOUND
     assert response.json()["errors"][0]["error_key"] == "user_not_found"
+
+
+def test_get_reco_for_unknown_model(
+    client: TestClient,
+) -> None:
+    user_id = EXISTING_USER
+    model = "this_model_not_exists"
+
+    path = GET_RECO_PATH.format(model_name=model, user_id=user_id)
+
+    with client:
+        response = client.get(path)
+    assert response.status_code == HTTPStatus.NOT_FOUND
+    assert response.json()["errors"][0]["error_key"] == "model_not_found"
