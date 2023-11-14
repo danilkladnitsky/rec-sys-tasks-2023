@@ -47,6 +47,7 @@ jobs:
         run: make test
 
   deploy:
+    needs: test
     runs-on: self-hosted
     steps:
       - name: Checkout
@@ -73,7 +74,10 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install 
-        
+
+      - name: Stop docker services
+        run: docker compose stop
+
       - name: Run docker image
         run: docker compose up --build -d --force-recreate
 
