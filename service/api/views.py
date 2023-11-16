@@ -13,6 +13,21 @@ class RecoResponse(BaseModel):
     items: List[int]
 
 
+class ErrorResponse(BaseModel):
+    error_message: str
+    error_key: str
+
+
+class RecoUnauthorizedResponse(BaseModel):
+    error_message: str
+    error_key: str
+
+
+class RecoEntityNotFoundResponse(BaseModel):
+    error_message: str
+    error_key: str
+
+
 router = APIRouter()
 
 
@@ -28,6 +43,11 @@ async def health() -> str:
     path="/reco/{model_name}/{user_id}",
     tags=["Recommendations"],
     response_model=RecoResponse,
+    responses={
+        404: {'model': RecoEntityNotFoundResponse, 'description': 'Модель или юзер не были найдены'},
+        200: {'model': RecoResponse, 'description': 'Рекомендации для указанного юзера'},
+        401: {'model': RecoUnauthorizedResponse, 'description': 'Невалидный Api-Key'}
+    }
 )
 async def get_reco(
     request: Request,

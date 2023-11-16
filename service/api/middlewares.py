@@ -12,6 +12,8 @@ from service.response import access_error, server_error
 
 API_KEY = env("API_KEY", "default_api_key")
 
+allowed_routes = ['/docs', '/health', '/openapi.json']
+
 
 class AccessMiddleware(BaseHTTPMiddleware):
     async def dispatch(
@@ -44,6 +46,11 @@ class AuthorizationMiddleware(BaseHTTPMiddleware):
         call_next: RequestResponseEndpoint,
     ) -> Response:
         user_api_key = request.headers.get("api-key")
+
+        url_is_public = request.url.path in allowed_routes
+
+        if url_is_public:
+            return await call_next(request)
 
         if user_api_key != API_KEY or user_api_key is None:
             error = Error(error_key="server_error", error_message="Invalid Api-Key")
