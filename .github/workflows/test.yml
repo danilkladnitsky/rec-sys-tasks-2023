@@ -1,9 +1,5 @@
 name: Lint, test and run application
 on:
-  push:
-    branches:
-      - master
-      - lab*
   pull_request:
   workflow_dispatch:
 
