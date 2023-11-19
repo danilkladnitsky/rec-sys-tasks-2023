@@ -3,13 +3,29 @@ from typing import List
 from fastapi import APIRouter, FastAPI, Request
 from pydantic import BaseModel
 
-from service.api.exceptions import UserNotFoundError
+from service.api.exceptions import ModelNotFoundError, UserNotFoundError
 from service.log import app_logger
+from service.ml.model_manager import get_model_by_name
 
 
 class RecoResponse(BaseModel):
     user_id: int
     items: List[int]
+
+
+class ErrorResponse(BaseModel):
+    error_message: str
+    error_key: str
+
+
+class RecoUnauthorizedResponse(BaseModel):
+    error_message: str
+    error_key: str
+
+
+class RecoEntityNotFoundResponse(BaseModel):
+    error_message: str
+    error_key: str
 
 
 router = APIRouter()
@@ -27,6 +43,11 @@ async def health() -> str:
     path="/reco/{model_name}/{user_id}",
     tags=["Recommendations"],
     response_model=RecoResponse,
+    responses={
+        404: {'model': RecoEntityNotFoundResponse, 'description': 'Модель или юзер не были найдены'},
+        200: {'model': RecoResponse, 'description': 'Рекомендации для указанного юзера'},
+        401: {'model': RecoUnauthorizedResponse, 'description': 'Невалидный Api-Key'}
+    }
 )
 async def get_reco(
     request: Request,
@@ -35,14 +56,16 @@ async def get_reco(
 ) -> RecoResponse:
     app_logger.info(f"Request for model: {model_name}, user_id: {user_id}")
 
-    # Write your code here
-
     if user_id > 10**9:
         raise UserNotFoundError(error_message=f"User {user_id} not found")
 
-    k_recs = request.app.state.k_recs
-    reco = list(range(k_recs))
-    return RecoResponse(user_id=user_id, items=reco)
+    RequestedModel = get_model_by_name(model_name, user_id)
+
+    if RequestedModel is None:
+        raise ModelNotFoundError(error_message=f"Requested  model with name '{model_name}' wasn't registered yet")
+
+    response = RequestedModel().get_reco(user_id=user_id)
+    return RecoResponse(user_id=user_id, items=response)
 
 
 def add_views(app: FastAPI) -> None:
